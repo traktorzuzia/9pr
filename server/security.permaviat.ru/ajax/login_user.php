@@ -10,7 +10,7 @@ if (empty($login) || empty($password)) {
     exit;
 }
 
-$url = 'http://localhost:81/9pr/server/auth.permaviat.ru/index.php';
+$url = 'http://localhost:81/9pr/Сервер/auth.permaviat.ru/index.php';
 $ch = curl_init($url);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_USERPWD, "$login:$password");
