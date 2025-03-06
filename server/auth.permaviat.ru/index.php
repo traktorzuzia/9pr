@@ -20,7 +20,8 @@
         $base64Payload = base64_encode(json_encode($payload)); 
         
         $unsignedToken = $base64Header . "." .$base64Payload; 
-        $signature = hash_hmac('sha256', $unsignedToken, $SECRET_KEY, true); 
+        $signature = hash_hmac('sha256', $unsignedToken, $SECRET_KEY, true);
+
         $base64Signature = base64_encode($signature); 
        
         $token =  $base64Header . '.'. $base64Payload . '.' . $base64Signature;

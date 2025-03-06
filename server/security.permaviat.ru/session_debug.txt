@@ -1,0 +1,5 @@
+Array
+(
+    [token] => eyJ0eXAiOiJKV1QiLCJhbGciOiJzaGEyNTYifQ==.eyJ1c2VySWQiOiIyNCIsInJvbGUiOiIwIn0=.Yxxl25+ETy504XRDSiQoB/JfsB5SeunKBihif44iHP0=
+    [redirects] => 0
+)

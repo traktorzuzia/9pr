@@ -1,20 +1,56 @@
 <?php
-	session_start();
-	include("./settings/connect_datebase.php");
-	
-	if (isset($_SESSION['user'])) {
-		if($_SESSION['user'] == -1) {
-			header("Location: login.php");
-		} else {
-			$user_to_query = $mysqli->query("SELECT `roll` FROM `users` WHERE `id` = ".$_SESSION['user']);
-			$user_to_read = $user_to_query->fetch_row();
-			
-			if($user_to_read[0] == 1) header("Location: login.php");
-		}
- 	} else header("Location: login.php");
-	
+session_start();
+
+// Проверяем, есть ли токен в сессии
+if (!isset($_SESSION['token']) || empty($_SESSION['token'])) {
+    header("Location: login.php");
+    exit();
+}
+
+// Подключение к БД
+include("./settings/connect_datebase.php");
+
+// Расшифровка токена
+$SECRET_KEY = 'cAtwa1kkEy';
+$token = $_SESSION['token'];
+$parts = explode('.', $token);
+
+if (count($parts) === 3) {
+    $header_base64 = $parts[0];
+    $payload_base64 = $parts[1];
+    $signatureJWT = $parts[2];
+
+    // Проверяем подпись токена
+    $unsignedToken = $header_base64 . '.' . $payload_base64;
+    $signature = base64_encode(hash_hmac('sha256', $unsignedToken, $SECRET_KEY, true));
+
+    if ($signatureJWT === $signature) {
+        $payload_data = json_decode(base64_decode($payload_base64), true);
+        $_SESSION['user_id'] = $payload_data['userId'];
+        $role = $payload_data['role'];
+
+        // Логируем заход
+        file_put_contents('debug_log.txt', "Зашли в user.php. Роль пользователя: $role\n", FILE_APPEND);
+
+        // Если роль не 0 (обычный пользователь), перенаправляем на admin.php
+        if ($role == 1) {
+            header("Location: admin.php");
+            exit();
+        }
+    } else {
+        unset($_SESSION['token']);
+        header("Location: login.php");
+        exit();
+    }
+} else {
+    unset($_SESSION['token']);
+    header("Location: login.php");
+    exit();
+}
 ?>
-<!DOCTYPE HTML>
+
+
+	<!DOCTYPE HTML>
 <html>
 	<head> 
 		<script src="https://code.jquery.com/jquery-1.8.3.js"></script>
@@ -41,18 +77,32 @@
 			<div class="content">
 				<input type="button" class="button" value="Выйти" onclick="logout()"/>
 				<div class="name" style="padding-bottom: 0px;">Личный кабинет</div>
-				<div class="description">Добро пожаловать: 
-					<?php
-						$user_to_query = $mysqli->query("SELECT * FROM `users` WHERE `id` = ".$_SESSION['user']);
-						$user_to_read = $user_to_query->fetch_row();
+				
+				
+                <?php
+                $user_id = $_SESSION['user_id'] ;
+                if ($user_id > 0) {
+					$stmt = $mysqli->prepare("SELECT id, login FROM users WHERE id = ?");
+
+					if ($stmt) {
+						// Привязываем параметр
+						$stmt->bind_param('i', $user_id);
 						
-						echo $user_to_read[1];
-					?>
-					<br>Ваш идентификатор:
-					<?php
-						echo $user_to_read[0];
-					?>
-				</div>
+						// Выполняем запрос
+						$stmt->execute();
+						
+						// Получаем результат
+						$stmt->bind_result($id, $login);
+						$stmt->fetch();
+						
+						// Закрываем запрос
+						$stmt->close();
+                } else {
+                    echo "Ошибка авторизации!";
+                }}
+                ?>
+				<div class="description">Добро пожаловать: <?php echo  $login; ?>
+                <br>Ваш идентификатор: <?php echo $user_id ; ?>
 			
 				<div class="footer">
 					© КГАПОУ "Авиатехникум", 2020
@@ -61,56 +111,21 @@
 				</div>
 			</div>
 		</div>
-		
-		<script>
-			var id_statement = -1;
-			function DeleteStatementt(id_statement) {
-				if(id_statement != -1) {
-					
-					var data = new FormData();
-					data.append("id_statement", id_statement);
-					
-					// AJAX запрос
-					$.ajax({
-						url         : 'ajax/delete_statement.php',
-						type        : 'POST', // важно!
-						data        : data,
-						cache       : false,
-						dataType    : 'html',
-						// отключаем обработку передаваемых данных, пусть передаются как есть
-						processData : false,
-						// отключаем установку заголовка типа запроса. Так jQuery скажет серверу что это строковой запрос
-						contentType : false, 
-						// функция успешного ответа сервера
-						success: function (_data) {
-							console.log(_data);
-							location.reload();
-						},
-						// функция ошибки
-						error: function(){
-							console.log('Системная ошибка!');
-						}
-					});
-				}
-			}
-			
-			function logout() {
-				$.ajax({
-					url         : 'ajax/logout.php',
-					type        : 'POST', // важно!
-					data        : null,
-					cache       : false,
-					dataType    : 'html',
-					processData : false,
-					contentType : false, 
-					success: function (_data) {
-						location.reload();
-					},
-					error: function( ){
-						console.log('Системная ошибка!');
-					}
-				});
-			}
-		</script>
-	</body>
+    <script>
+        function logout() {
+            console.log("Запрос на выход отправлен...");
+            $.ajax({
+                url: 'ajax/logout.php', 
+                type: 'POST',
+                success: function () {
+                    console.log("Выход выполнен, перезагрузка...");
+                    window.location.href = "login.php";
+                },
+                error: function () {
+                    console.log("Ошибка при выходе");
+                }
+            });
+        }
+    </script>
+</body>
 </html>
