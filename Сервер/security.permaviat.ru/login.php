@@ -1,18 +1,42 @@
 <?php
 	session_start();
 	include("./settings/connect_datebase.php");
-	
-	if (isset($_SESSION['user'])) {
-		if($_SESSION['user'] != -1) {
-			
-			$user_query = $mysqli->query("SELECT * FROM `users` WHERE `id` = ".$_SESSION['user']);
-			while($user_read = $user_query->fetch_row()) {
-				if($user_read[3] == 0) header("Location: user.php");
-				else if($user_read[3] == 1) header("Location: admin.php");
+	$SECRET_KEY = "cAtwa1kkEy";
+	if (isset(apache_request_headers()['token'])) {
+		$_SESSION['token'] = apache_request_headers()['token'];
+	}
+	if (isset($_SESSION['token']) && !empty($_SESSION['token'])) {
+		$token = $_SESSION['token'];
+		file_put_contents('token.txt', "$token");
+		$parts = explode('.', $token);
+
+		if (count($parts) === 3) {
+			$header_base64 = $parts[0];
+			$payload = $parts[1];
+			$signatureJWT = $parts[2];
+
+			$header = json_decode(base64_decode($header_base64));
+			$unsignedToken = $header_base64 . '.' . $payload;
+			$signature = base64_encode(hash_hmac($header->alg, $unsignedToken, $SECRET_KEY));
+
+			if ($signatureJWT === $signature) {
+				$payload_data = json_decode(base64_decode($payload), true);
+				$user_id = $payload_data['userId'];
+				$role = $payload_data['role'];
+
+				if ($role == 0) {
+					header("Location: user.php");
+				} else if ($role == 1) {
+					header("Location: admin.php");
+				}
+				exit();
+			} else {
+				unset($_SESSION['token']); // Если подпись неверна, удаляем токен
 			}
 		}
- 	}
+	}
 ?>
+			
 <html>
 	<head> 
 		<meta charset="utf-8">

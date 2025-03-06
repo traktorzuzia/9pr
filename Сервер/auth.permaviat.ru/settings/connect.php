@@ -1,6 +1,3 @@
 <?php
-	$mysqli = new mysqli($server, $user, $password, $database);
-	if ($mysqli->connect_error){
-		die("Connection failed " . $conn->connect_error);
-	}
+	$mysqli = new mysqli('127.0.0.1', 'root', '', 'security2');
 ?>
