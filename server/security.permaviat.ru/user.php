@@ -6,7 +6,6 @@
 		if($_SESSION['user'] == -1) {
 			header("Location: login.php");
 		} else {
-			// проверяем пользователя, если админ выкидываем на админа
 			$user_to_query = $mysqli->query("SELECT `roll` FROM `users` WHERE `id` = ".$_SESSION['user']);
 			$user_to_read = $user_to_query->fetch_row();
 			

@@ -1,6 +1,6 @@
 <?php
-    include("connect_datebase.php");
-    header('Content-Type: application/json');
+    include("settings/connect.php");
+  
     if (!isset($_SERVER['PHP_AUTH_USER']) || empty($_SERVER['PHP_AUTH_USER'])) { header('HTTP/1.0 403 Forbidden'); exit; }
     if (!isset($_SERVER['PHP_AUTH_PW']) || empty($_SERVER['PHP_AUTH_PW'])) { header('HTTP/1.0 403 Forbidden'); exit; }
 
